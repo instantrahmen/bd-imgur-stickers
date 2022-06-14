@@ -72,8 +72,8 @@ class BDImgurStickers {
 
     const iframe = document.createElement("iframe");
     iframe.id = BDImgurStickers.storeId;
-    const store = document.head.appendChild(iframe).contentWindow.frames
-      .localStorage;
+    const store =
+      document.head.appendChild(iframe).contentWindow.frames.localStorage;
 
     BdApi.injectCSS(
       BDImgurStickers.cssId,
@@ -106,9 +106,8 @@ class BDImgurStickers {
       const menuEl = React.useRef(null);
       const inputDebounce = React.useRef(null);
       const [albumID, setAlbumID] = React.useState(savedAlbumID);
-      const [albumIDDebounced, setAlbumIDDebounced] = React.useState(
-        savedAlbumID
-      );
+      const [albumIDDebounced, setAlbumIDDebounced] =
+        React.useState(savedAlbumID);
       const [menuOpen, setMenuOpen] = React.useState(false);
       const [menuPlacement, setMenuPlacement] = React.useState({ x: 0, y: 0 });
       const [buttonPlacement, setButtonPlacement] = React.useState({
@@ -215,28 +214,39 @@ class BDImgurStickers {
         };
       }, []);
 
-      const sendImage = (link) => {
-        const channel = window.location.href.split("/").slice(-1)[0];
+      const messageUpload = BdApi.findModuleByProps(
+        "upload",
+        "instantBatchUpload"
+      ).upload;
 
-        fetch(`https://discordapp.com/api/channels/${channel}/messages`, {
-          headers: {
-            Authorization: store.getItem("token").replace(/"/g, ""),
-            "Content-Type": "application/json",
+      const getBlobFromLink = async (link) => {
+        const response = await fetch(link, { cache: "force-cache" });
+        const fileBuffer = await response.arrayBuffer();
+        const filename = "sticker.png";
+        const file = new File([Buffer.from(fileBuffer)], filename);
+        return file;
+      };
+
+      const sendMessage = ({ channelId, file, messageContent }) => {
+        console.log({ messageUpload });
+        messageUpload({
+          channelId,
+          file,
+          message: {
+            content: messageContent,
           },
-          method: "POST",
-          body: JSON.stringify({ content: link }),
-        })
-          .then((res) => {
-            if (res.status !== 200) {
-              BdApi.showToast(`Error: HTTP ${res.status}`, { type: "error" });
-            }
-          })
-          .catch((err) => {
-            console.error(err);
-            BdApi.showToast("Unknown error. See console for details", {
-              type: "error",
-            });
-          });
+        });
+      };
+
+      const sendImage = async (link) => {
+        const channel = window.location.href.split("/").slice(-1)[0];
+        const file = await getBlobFromLink(link);
+        console.log({ channel, link, file });
+        sendMessage({
+          channelId: channel,
+          messageContent: "",
+          file,
+        });
       };
 
       return e("div", { style: { position: "absolute", zIndex: 50 } }, [
@@ -276,8 +286,7 @@ class BDImgurStickers {
                 strokeLinecap: "round",
                 strokeLinejoin: "round",
                 strokeWidth: 2,
-                d:
-                  "M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z",
+                d: "M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z",
               },
               null
             )
